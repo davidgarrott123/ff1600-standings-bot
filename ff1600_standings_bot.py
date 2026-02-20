@@ -3,7 +3,6 @@ import json
 import asyncio
 import requests
 import discord
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
 # ==================================================
@@ -425,4 +424,5 @@ async def post_standings():
 # Run
 if __name__ == "__main__":
     asyncio.run(post_standings())
+
 
