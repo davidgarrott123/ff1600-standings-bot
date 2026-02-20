@@ -3,6 +3,7 @@ import json
 import asyncio
 import requests
 import discord
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
 # ==================================================
@@ -18,6 +19,8 @@ SERIES_ID = 5941
 CAR_CLASS_ID = 4016  # FF1600 car class (from the URL)
 DIVISION_1 = 1
 DIVISION_2 = 2
+
+IRACING_COOKIE = "hubspotutk=e2317f449d4fc4f2f2588cba6bd5f4c2; messagesUtk=037bfa25bd77420daebe2d813e4e32c0; theme=light; _ga=GA1.1.158087617.1759084326; _ga_Y1Q7PHRDJ4=GS2.1.s1766182172$o3$g0$t1766182172$j60$l0$h0; __hs_do_not_track=yes; __hstc=187670007.e2317f449d4fc4f2f2588cba6bd5f4c2.1763503646131.1763503646131.1771449457162.2; __hssrc=1; iracing_ui=7utXH4c6aS41IbxhHvPD6dtUoA1ESyNxf7dSlT6xfRCjfLHzmfkrHVlAl6LpIOZimXbXMFIhwGq%2FEl75ECovfw%3D%3D; _ga_VRYGYR9B0P=GS2.1.s1771449456$o2$g1$t1771451227$j60$l0$h0; _ga_DCQ7B2BWPN=GS2.1.s1771449458$o2$g1$t1771453383$j60$l0$h0; AWSALB=xc14/o74nYKB418EmriOT2Rh1RExusmzSbVzu4y5FviBJsiNzIqowsjm1IBABg2HR/RFM7NY4Dbxmk98pkMeuXOShFlT5pPEUPv9UHCiRTsezQquzK73l1PXSV6t; AWSALBCORS=xc14/o74nYKB418EmriOT2Rh1RExusmzSbVzu4y5FviBJsiNzIqowsjm1IBABg2HR/RFM7NY4Dbxmk98pkMeuXOShFlT5pPEUPv9UHCiRTsezQquzK73l1PXSV6t"
 
 CACHE_FILE = "driver_cache.json"
 MESSAGE_ID_FILE = "message_id.txt"
@@ -422,7 +425,27 @@ async def post_standings():
 
 
 # Run
-if __name__ == "__main__":
-    asyncio.run(post_standings())
+import asyncio
+from datetime import datetime, timedelta
+
+async def scheduler():
+    while True:
+        now = datetime.utcnow()
+
+        next_run = now.replace(minute=25, second=0, microsecond=0)
+
+        if now.minute >= 25:
+            next_run += timedelta(hours=1)
+
+        wait_seconds = (next_run - now).total_seconds()
+
+        print(f"Next run at {next_run}")
+        print(f"Sleeping for {int(wait_seconds)} seconds")
+
+        await asyncio.sleep(wait_seconds)
+
+        print("Updating standings...")
+        await post_standings()
 
 
+asyncio.run(scheduler())
