@@ -13,6 +13,7 @@ from datetime import datetime
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 IRACING_COOKIE = os.getenv("IRACING_COOKIE")
+TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 
 # Motorsport UK FF1600 Trophy
 SERIES_ID = 5941
@@ -434,14 +435,16 @@ async def post_standings():
 
 # Run
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 async def scheduler():
-    while True:
-        now = datetime.utcnow()
 
+    if TEST_MODE:
+        print("TEST MODE ENABLED — Running immediately...")
         await post_standings()
-        return
+
+    while True:
+        now = datetime.now(UTC)
 
         next_run = now.replace(minute=25, second=0, microsecond=0)
 
@@ -460,6 +463,7 @@ async def scheduler():
 
 
 asyncio.run(scheduler())
+
 
 
 
