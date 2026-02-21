@@ -439,9 +439,11 @@ from datetime import datetime, timedelta, UTC
 
 async def scheduler():
 
-    if TEST_MODE:
-        print("TEST MODE ENABLED — Running immediately...")
+    print("Container started — running initial update...")
+    try:
         await post_standings()
+    except Exception as e:
+        print(f"Initial update failed: {e}")
 
     while True:
         now = datetime.now(UTC)
@@ -458,11 +460,14 @@ async def scheduler():
 
         await asyncio.sleep(wait_seconds)
 
-        print("Updating standings...")
-        await post_standings()
-
+        try:
+            print("Updating standings...")
+            await post_standings()
+        except Exception as e:
+            print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
