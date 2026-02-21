@@ -20,8 +20,6 @@ CAR_CLASS_ID = 4016  # FF1600 car class (from the URL)
 DIVISION_1 = 1
 DIVISION_2 = 2
 
-IRACING_COOKIE = "hubspotutk=e2317f449d4fc4f2f2588cba6bd5f4c2; messagesUtk=037bfa25bd77420daebe2d813e4e32c0; theme=light; _ga=GA1.1.158087617.1759084326; _ga_Y1Q7PHRDJ4=GS2.1.s1766182172$o3$g0$t1766182172$j60$l0$h0; __hs_do_not_track=yes; __hstc=187670007.e2317f449d4fc4f2f2588cba6bd5f4c2.1763503646131.1763503646131.1771449457162.2; __hssrc=1; iracing_ui=7utXH4c6aS41IbxhHvPD6dtUoA1ESyNxf7dSlT6xfRCjfLHzmfkrHVlAl6LpIOZimXbXMFIhwGq%2FEl75ECovfw%3D%3D; _ga_VRYGYR9B0P=GS2.1.s1771449456$o2$g1$t1771451227$j60$l0$h0; _ga_DCQ7B2BWPN=GS2.1.s1771449458$o2$g1$t1771453383$j60$l0$h0; AWSALB=xc14/o74nYKB418EmriOT2Rh1RExusmzSbVzu4y5FviBJsiNzIqowsjm1IBABg2HR/RFM7NY4Dbxmk98pkMeuXOShFlT5pPEUPv9UHCiRTsezQquzK73l1PXSV6t; AWSALBCORS=xc14/o74nYKB418EmriOT2Rh1RExusmzSbVzu4y5FviBJsiNzIqowsjm1IBABg2HR/RFM7NY4Dbxmk98pkMeuXOShFlT5pPEUPv9UHCiRTsezQquzK73l1PXSV6t"
-
 CACHE_FILE = "driver_cache.json"
 MESSAGE_ID_FILE = "message_id.txt"
 MESSAGE_ID_DIV1 = 1474495668075757843
@@ -38,7 +36,7 @@ FLAG_CACHE = {
     "Fredrik Sørlie": ":flag_no:",
     "Jake R Williams": ":wales:",
     "Aleksander Istad": ":flag_no:",
-    "Edward Buchanan": ":flag_us:",
+    "Edward Buchanan": ":flag_ca:",
     "Daniel Case2": ":flag_us:",
     "Jay M Lawrence": ":flag_au:",
     "Brett McBurnie": ":flag_au:",
@@ -47,16 +45,16 @@ FLAG_CACHE = {
     "JW Lane": ":flag_vn:",
     "James P Becker": ":flag_gg:",
     "Razvan Florin Veina": ":flag_ro:",
-    "Frankiie Dee": ":flag_us:",
+    "Frankie Dee": ":flag_us:",
     "Andre O Sousa": ":flag_br:",
-    "Jay Wray": ":flag_br:",
+    "Jay Wray": ":flag_us:",
     "Nedo Braun": ":flag_de:",
-    "Alex Herte": ":flag_it:",
-    "Michele Borghesani": ":flag_fi:",
+    "Alex Herte": ":flag_ea:",
+    "Michele Borghesani": ":flag_it:",
     "Stephen Strudwick": "🇬🇧",
     "Rein Tiesing": ":flag_nl:",
     "Daniel Repetto": ":flag_ea:",
-    "Rob C Johnson": "🇬🇧",
+    "Rob C Johnson": ":england:",
     "Tim M. Connolly": ":flag_au:",
     "Scott Meadows": ":flag_us:",
     "Greg Boyce": ":flag_us:",
@@ -69,6 +67,10 @@ FLAG_CACHE = {
     "Erika Prior": ":flag_ea:",
     "Mark Kerr2": ":flag_au:",
     "Guy Robertson": "🇬🇧",
+    "Dan Willmott": "🇬🇧",
+    "Todd P Martin": ":flag_ca:",
+    "Ed Parise": ":flag_br:",
+    "Sergey Khvostov": ":globe_with_meridians:",
 }
 
 LICENSE_COLOURS = {
@@ -120,7 +122,13 @@ def fetch_division(division_number):
     s3_link = proxy_data.get("link")
 
     # Step 2: Get manifest
-    manifest = requests.get(s3_link).json()
+    s3_link = proxy_data.get("link")
+
+    if not s3_link:
+        print("iRacing API did not return link. Possibly expired cookie.")
+        return [], []  # Prevent crash
+
+    manifest = requests.get(s3_link).json())
 
     chunk_info = manifest.get("chunk_info", {})
     base_url = chunk_info.get("base_download_url")
@@ -449,3 +457,4 @@ async def scheduler():
 
 
 asyncio.run(scheduler())
+
