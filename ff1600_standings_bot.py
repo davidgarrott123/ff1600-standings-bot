@@ -128,7 +128,7 @@ def fetch_division(division_number):
         print("iRacing API did not return link. Possibly expired cookie.")
         return [], []  # Prevent crash
 
-    manifest = requests.get(s3_link).json())
+    manifest = requests.get(s3_link).json()
 
     chunk_info = manifest.get("chunk_info", {})
     base_url = chunk_info.get("base_download_url")
@@ -457,4 +457,5 @@ async def scheduler():
 
 
 asyncio.run(scheduler())
+
 
