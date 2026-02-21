@@ -440,6 +440,9 @@ async def scheduler():
     while True:
         now = datetime.utcnow()
 
+        await post_standings()
+        return
+
         next_run = now.replace(minute=25, second=0, microsecond=0)
 
         if now.minute >= 25:
@@ -457,5 +460,6 @@ async def scheduler():
 
 
 asyncio.run(scheduler())
+
 
 
