@@ -336,42 +336,50 @@ async def post_standings():
 
     print("POST_STANDINGS STARTED")
 
+    # -------- FETCH --------
     try:
         div1, div2 = fetch_standings()
         print("DIV1 LENGTH:", len(div1))
         print("DIV2 LENGTH:", len(div2))
-
     except Exception as e:
         print(f"Error fetching standings: {e}")
         return
 
+    # -------- FORMAT --------
     try:
         division1_text = format_division("Division 1", div1)
         division2_text = format_division("Division 2", div2)
         print("FORMAT COMPLETE")
-
     except Exception as e:
         print(f"Error formatting standings: {e}")
         return
 
+    # -------- DISCORD UPDATE --------
+    try:
         channel = bot.get_channel(CHANNEL_ID)
 
         if channel is None:
             print("ERROR: Channel not found.")
             return
 
+        # ----- Division 1 -----
         async for message in channel.history(limit=50):
             if message.author == bot.user and "Division 1" in message.content:
+                print("Editing Division 1 message...")
                 await message.edit(content=division1_text)
                 break
         else:
+            print("Sending new Division 1 message...")
             await channel.send(division1_text)
 
+        # ----- Division 2 -----
         async for message in channel.history(limit=50):
             if message.author == bot.user and "Division 2" in message.content:
+                print("Editing Division 2 message...")
                 await message.edit(content=division2_text)
                 break
         else:
+            print("Sending new Division 2 message...")
             await channel.send(division2_text)
 
         print("DISCORD UPDATE COMPLETE")
@@ -405,8 +413,14 @@ async def scheduler():
         print(f"Next run at {next_run}")
         print(f"Sleeping for {int(wait_seconds)} seconds")
 
-        await asyncio.sleep(wait_seconds)
+        sleep_interval = 60  # check every minute
 
+        while wait_seconds > 0:
+            await asyncio.sleep(min(sleep_interval, wait_seconds))
+              wait_seconds -= sleep_interval
+
+        print("Heartbeat...")
+        
         try:
             print("Updating standings...")
             await post_standings()
@@ -422,6 +436,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
