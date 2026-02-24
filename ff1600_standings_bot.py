@@ -55,11 +55,15 @@ FLAG_CACHE = {
     "Stephen Strudwick": "🇬🇧",
     "Rein Tiesing": ":flag_nl:",
     "Daniel Repetto": ":flag_ea:",
+    "Alex Moreno3": ":flag_ea:",
     "Rob C Johnson": ":england:",
     "Tim M. Connolly": ":flag_au:",
     "Scott Meadows": ":flag_us:",
+    "Ryan Turcotte": ":flag_us:",
     "Greg Boyce": ":flag_us:",
     "Ned Worton": "🇬🇧",
+    "Nick Aronson": "🇬🇧",
+    "Matt Kendall": "🇬🇧",
     "Wayne Funston": ":flag_au:",
     "Nathan Young3": ":flag_us:",
     "Jiyun Chen": ":flag_us:",
@@ -72,6 +76,7 @@ FLAG_CACHE = {
     "Todd P Martin": ":flag_ca:",
     "Ed Parise": ":flag_br:",
     "Sergey Khvostov": ":globe_with_meridians:",
+    "MT Jones": ":globe_with_meridians:",
 }
 
 LICENSE_COLOURS = {
@@ -450,7 +455,7 @@ async def scheduler():
 
         next_run = now.replace(minute=25, second=0, microsecond=0)
 
-        if now.minute >= 25:
+        if now.minute >= 30:
             next_run += timedelta(hours=1)
 
         wait_seconds = (next_run - now).total_seconds()
@@ -467,6 +472,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
