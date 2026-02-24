@@ -1,12 +1,12 @@
 print("SCRIPT STARTED")
 
+from datetime import datetime, timedelta, timezone
 import os
 import json
 import asyncio
 import requests
 import discord
 from discord.ext import commands
-from datetime import datetime, timedelta, timezone
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -157,6 +157,7 @@ def fetch_division(division_number):
 
     return drivers
 
+
 def fetch_standings():
 
     proxy_url = (
@@ -194,48 +195,48 @@ def fetch_standings():
         chunk_data = requests.get(chunk_url).json()
         all_drivers.extend(chunk_data)
 
-    # -------- WEEKLY CACHE (ONLY 12 CALLS TOTAL) --------
-    print("Fetching weekly data cache...")
-    weekly_cache = {}
+    # -------- WEEKLY CACHE --------
+print("Fetching weekly data cache...")
+weekly_cache = {}
+
+for week in range(0, 12):
+    weekly_cache[week] = fetch_week_points(week)
+
+div1 = []
+div2 = []
+
+for entry in all_drivers:
+
+    division = entry.get("division")
+    rank = entry.get("season_rank", 9999)
+
+    driver_data = {
+        "name": entry.get("display_name", ""),
+        "points": entry.get("points", 0),
+        "rank": rank,
+        "weeks": entry.get("weeks_counted", 0)
+    }
+
+    # -------- WEEKLY SCORES --------
+    weekly_scores = []
 
     for week in range(0, 12):
-        weekly_cache[week] = fetch_week_points(week)
+        week_data = weekly_cache.get(week, [])
 
-    div1 = []
-    div2 = []
+        for entry_week in week_data:
+            if entry_week.get("display_name") == driver_data["name"]:
+                weekly_scores.append(entry_week.get("points", 0))
+                break
+        else:
+            weekly_scores.append(0)
 
-    for entry in all_drivers:
+    # 🔥 THIS is where top_8_scores belongs
+    driver_data["top_8_scores"] = sorted(weekly_scores, reverse=True)[:8]
 
-        division = entry.get("division")
-        rank = entry.get("season_rank", 9999)
-
-        driver_data = {
-            "name": entry.get("display_name", ""),
-            "points": entry.get("points", 0),
-            "rank": rank,
-            "weeks": entry.get("weeks_counted", 0)
-        }
-
-        # -------- WEEKLY SCORES --------
-        weekly_scores = []
-
-        for week in range(0, 12):
-            week_data = weekly_cache.get(week, [])
-
-            for entry_week in week_data:
-                if entry_week.get("display_name") == driver_data["name"]:
-                    weekly_scores.append(entry_week.get("points", 0))
-                    break
-            else:
-                weekly_scores.append(0)
-
-        driver_data["top_8_scores"] = sorted(weekly_scores, reverse=True)[:8]
-
-        if division == 0:
-            div1.append(driver_data)
-
-        elif division == 1:
-            div2.append(driver_data)
+    if division == 0:
+        div1.append(driver_data)
+    elif division == 1:
+        div2.append(driver_data)
 
     div1.sort(key=lambda x: x["rank"])
     div2.sort(key=lambda x: x["rank"])
@@ -419,6 +420,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
