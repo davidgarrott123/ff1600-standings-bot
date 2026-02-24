@@ -6,7 +6,6 @@ import asyncio
 import requests
 import discord
 from discord.ext import commands
-from datetime import datetime, timedelta, timezone
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -159,7 +158,6 @@ def fetch_division(division_number):
 
 def fetch_standings():
 
-    # Always use division=-1 (same as UI)
     proxy_url = (
         "https://members-ng.iracing.com/bff/pub/proxy/data/stats/season_driver_standings"
         f"?season_id={SERIES_ID}"
@@ -173,12 +171,15 @@ def fetch_standings():
         "User-Agent": "Mozilla/5.0"
     }
 
-    # Step 1: Proxy
+    print("FETCHING STANDINGS...")
+
     proxy_resp = requests.get(proxy_url, headers=headers)
     proxy_data = proxy_resp.json()
     s3_link = proxy_data.get("link")
 
-    # Step 2: Manifest
+    if not s3_link:
+        raise Exception("iRacing did not return S3 link")
+
     manifest = requests.get(s3_link).json()
 
     chunk_info = manifest.get("chunk_info", {})
@@ -187,13 +188,18 @@ def fetch_standings():
 
     all_drivers = []
 
-    # Step 3: Download all chunks
     for chunk_file in chunk_files:
         chunk_url = base_url + chunk_file
         chunk_data = requests.get(chunk_url).json()
         all_drivers.extend(chunk_data)
 
-    # Step 4: Filter divisions like UI does
+    # -------- WEEKLY CACHE (ONLY 12 CALLS TOTAL) --------
+    print("Fetching weekly data cache...")
+    weekly_cache = {}
+
+    for week in range(0, 12):
+        weekly_cache[week] = fetch_week_points(week)
+
     div1 = []
     div2 = []
 
@@ -206,16 +212,14 @@ def fetch_standings():
             "name": entry.get("display_name", ""),
             "points": entry.get("points", 0),
             "rank": rank,
-            "weeks": entry.get("weeks_counted", 0),
-            "week_points": 0,
-            "results": entry.get("results", [])
+            "weeks": entry.get("weeks_counted", 0)
         }
 
+        # -------- WEEKLY SCORES --------
         weekly_scores = []
 
         for week in range(0, 12):
-
-            week_data = fetch_week_points(week)
+            week_data = weekly_cache.get(week, [])
 
             for entry_week in week_data:
                 if entry_week.get("display_name") == driver_data["name"]:
@@ -224,29 +228,21 @@ def fetch_standings():
             else:
                 weekly_scores.append(0)
 
-        driver_data["weekly_scores"] = weekly_scores
+        driver_data["top_8_scores"] = sorted(weekly_scores, reverse=True)[:8]
 
-        top_8 = sorted(weekly_scores, reverse=True)[:8]
-        driver_data["top_8_scores"] = top_8
-
-        # ✅ Weekly points (safe extraction)
-        results = entry.get("results", [])
-        if results:
-            latest = results[-1]
-            driver_data["week_points"] = latest.get("points", 0)
-
-        # ✅ Correct division mapping
         if division == 0:
             div1.append(driver_data)
 
         elif division == 1:
             div2.append(driver_data)
 
-    # Step 5: Sort AFTER loop (IMPORTANT)
     div1.sort(key=lambda x: x["rank"])
     div2.sort(key=lambda x: x["rank"])
 
+    print("STANDINGS FETCHED")
+
     return div1[:20], div2[:20]
+    
 
 def fetch_week_points(week_num):
 
@@ -285,113 +281,6 @@ def fetch_week_points(week_num):
         week_drivers.extend(chunk_data)
 
     return week_drivers
-
-# ==================================================
-# DRAW LICENSE BADGE
-# ==================================================
-
-def draw_license_badge(draw, x, y, license_class, license_sr, font):
-
-    text = f"{license_class}{license_sr:.2f}"
-
-    padding_x = 16
-    padding_y = 6
-
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
-    text_height = bbox[3] - bbox[1]
-
-    bg_width = text_width + padding_x * 2
-
-    colour = LICENSE_COLOURS.get(license_class, (120, 120, 120))
-
-    draw.rounded_rectangle(
-        [x, y, x + bg_width, y + padding_y * 2],
-        radius=12,
-        fill=colour
-    )
-
-    draw.text(
-        (x + padding_x, y + padding_y),
-        text,
-        fill="white",
-        font=font
-    )
-
-    return bg_width
-
-
-# ==================================================
-# GENERATE IMAGE
-# ==================================================
-
-def generate_image(div1, div2):
-
-    # Limit to top 20 per division
-    div1 = div1[:20]
-    div2 = div2[:20]
-
-    width = 1400
-    row_height = 50
-    header_height = 120
-
-    total_rows = len(div1) + len(div2) + 4
-    height = header_height + total_rows * row_height + 40
-
-    img = Image.new("RGB", (width, height), (25, 25, 30))
-    draw = ImageDraw.Draw(img)
-
-    font = ImageFont.load_default()
-
-    # Title
-    draw.text((50, 30), "Motorsport UK FF1600 Trophy Championship", fill="white", font=font)
-
-    y = header_height
-
-    # ---------------- Division 1 ----------------
-    draw.text((50, y), "Division 1", fill="white", font=font)
-    y += row_height
-
-    leader_points = div1[0]["points"] if div1 else 0
-
-    for pos, driver in enumerate(div1, start=1):
-
-        draw.text((60, y), str(pos), fill="white", font=font)
-        draw.text((120, y), driver["name"], fill="white", font=font)
-        draw.text((900, y), f"{driver['points']} pts", fill="white", font=font)
-
-        gap = leader_points - driver["points"]
-        gap_text = "-" if pos == 1 else f"-{gap}"
-
-        draw.text((1100, y), gap_text, fill="white", font=font)
-
-        y += row_height
-
-    y += row_height
-
-    # ---------------- Division 2 ----------------
-    draw.text((50, y), "Division 2", fill="white", font=font)
-    y += row_height
-
-    leader_points = div2[0]["points"] if div2 else 0
-
-    for pos, driver in enumerate(div2, start=1):
-
-        draw.text((60, y), str(pos), fill="white", font=font)
-        draw.text((120, y), driver["name"], fill="white", font=font)
-        draw.text((900, y), f"{driver['points']} pts", fill="white", font=font)
-
-        gap = leader_points - driver["points"]
-        gap_text = "-" if pos == 1 else f"-{gap}"
-
-        draw.text((1100, y), gap_text, fill="white", font=font)
-
-        y += row_height
-
-    filename = "ff1600_standings.png"
-    img.save(filename)
-
-    return filename
 
 
 # ==================================================
@@ -447,13 +336,11 @@ def format_division(title, drivers):
 
 
 async def post_standings():
-    
+
     print("POST_STANDINGS STARTED")
 
     try:
-        print("FETCHING STANDINGS...")
         div1, div2 = fetch_standings()
-        print("STANDINGS FETCHED")
         print("DIV1 LENGTH:", len(div1))
         print("DIV2 LENGTH:", len(div2))
 
@@ -462,12 +349,8 @@ async def post_standings():
         return
 
     try:
-        print("FORMATTING DIVISION 1")
         division1_text = format_division("Division 1", div1)
-
-        print("FORMATTING DIVISION 2")
         division2_text = format_division("Division 2", div2)
-
         print("FORMAT COMPLETE")
 
     except Exception as e:
@@ -475,8 +358,6 @@ async def post_standings():
         return
 
     try:
-        print("CONNECTING TO DISCORD")
-
         await bot.wait_until_ready()
 
         channel = bot.get_channel(CHANNEL_ID)
@@ -485,84 +366,24 @@ async def post_standings():
             print("ERROR: Channel not found.")
             return
 
-        # ---- DIVISION 1 MESSAGE ----
         async for message in channel.history(limit=50):
             if message.author == bot.user and "Division 1" in message.content:
-                print("Editing Division 1 message...")
                 await message.edit(content=division1_text)
                 break
         else:
-            print("Sending new Division 1 message...")
             await channel.send(division1_text)
 
-        # ---- DIVISION 2 MESSAGE ----
         async for message in channel.history(limit=50):
             if message.author == bot.user and "Division 2" in message.content:
-                print("Editing Division 2 message...")
                 await message.edit(content=division2_text)
                 break
         else:
-            print("Sending new Division 2 message...")
             await channel.send(division2_text)
 
         print("DISCORD UPDATE COMPLETE")
 
     except Exception as e:
         print(f"Error updating Discord: {e}")
-
-    @bot.event
-    async def on_ready():
-
-        print(f"Logged in as {bot.user}")
-        now = datetime.now()
-        timestamp = now.strftime("%d/%m/%y at %H:%M")
-
-        channel = bot.get_channel(CHANNEL_ID)
-        if channel is None:
-            channel = await bot.fetch_channel(CHANNEL_ID)
-
-        div1_text = (
-            "**🏁 FF1600 Championship Standings 🏁**\n\n"
-            + format_division("Division 1", div1)
-            + f"\n\n_Last updated - {timestamp}_"
-        )
-
-        div2_text = (
-            format_division("Division 2", div2)
-            + f"\n\n_Last updated - {timestamp}_"
-        )
-
-        global MESSAGE_ID_DIV1, MESSAGE_ID_DIV2
-
-        try:
-            # -------- DIVISION 1 --------
-            if MESSAGE_ID_DIV1:
-                print("Editing Division 1 message...")
-                msg1 = await channel.fetch_message(MESSAGE_ID_DIV1)
-                await msg1.edit(content=div1_text)
-            else:
-                print("Sending Division 1 message...")
-                msg1 = await channel.send(div1_text)
-                MESSAGE_ID_DIV1 = msg1.id
-                print(f"Saved DIV1 ID: {MESSAGE_ID_DIV1}")
-
-            # -------- DIVISION 2 --------
-            if MESSAGE_ID_DIV2:
-                print("Editing Division 2 message...")
-                msg2 = await channel.fetch_message(MESSAGE_ID_DIV2)
-                await msg2.edit(content=div2_text)
-            else:
-                print("Sending Division 2 message...")
-                msg2 = await channel.send(div2_text)
-                MESSAGE_ID_DIV2 = msg2.id
-                print(f"Saved DIV2 ID: {MESSAGE_ID_DIV2}")
-
-        except Exception as e:
-            print("Error updating messages:", e)
-
-        await bot.close()
-
-    await bot.start(DISCORD_TOKEN)
 
 
 # Run
@@ -599,6 +420,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
