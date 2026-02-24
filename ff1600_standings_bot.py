@@ -366,7 +366,7 @@ def format_division(title, drivers):
 
         lines.append(
             f"**{i:>2}. {name_display} — {d['points']} pts ({gap_text})**\n"
-            f"_Weeks counted: {d['weeks']}_"
+            f"Weeks counted: {d['weeks']}\n"
         )
 
     return "\n".join(lines)
@@ -473,6 +473,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
