@@ -455,7 +455,7 @@ async def scheduler():
 
         next_run = now.replace(minute=25, second=0, microsecond=0)
 
-        if now.minute >= 30:
+        if now.minute >= 40:
             next_run += timedelta(hours=1)
 
         wait_seconds = (next_run - now).total_seconds()
@@ -472,6 +472,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
