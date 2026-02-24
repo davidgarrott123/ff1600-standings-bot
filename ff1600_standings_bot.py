@@ -18,7 +18,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ==================================================
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
 IRACING_COOKIE = os.getenv("IRACING_COOKIE")
 TEST_MODE = os.getenv("TEST_MODE", "false").lower() == "true"
 
@@ -599,6 +599,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
