@@ -1,3 +1,5 @@
+print("SCRIPT STARTED")
+
 import os
 import json
 import asyncio
@@ -543,6 +545,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
