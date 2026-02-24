@@ -291,45 +291,53 @@ import asyncio
 
 def format_division(title, drivers):
 
-    lines = [f"**{title}**"]
+    sections = []
+    leader_points = drivers[0]["points"] if drivers else 0
 
-    if not drivers:
-        return f"**{title}**\nNo data."
+    for chunk_index in range(0, 20, 5):
 
-    leader_points = drivers[0]["points"]
+        chunk = drivers[chunk_index:chunk_index+5]
+        start_pos = chunk_index + 1
+        end_pos = chunk_index + len(chunk)
 
-    for i, d in enumerate(drivers[:20], start=1):
+        lines = []
 
-        gap = leader_points - d["points"]
-        gap_text = "-" if i == 1 else f"-{gap}"
-
-        name = d["name"]
-        flag = FLAG_CACHE.get(name, "")
-
-        # 👽 Highlight logic
-        if name in HIGHLIGHT_NAMES:
-            name_display = f"👽 **{name}**"
+        # Only show championship heading on first section
+        if chunk_index == 0:
+            lines.append("🏁 FF1600 Championship Standings 🏁")
+            lines.append(f"{title} ({start_pos}-{end_pos})")
+            lines.append("")
         else:
-            name_display = name
+            lines.append(f"{title} ({start_pos}-{end_pos})")
+            lines.append("")
 
-        # Add flag AFTER name
-        if flag:
-            name_display = f"{name_display} {flag}"
+        for i, d in enumerate(chunk, start=start_pos):
 
-        # First line (no bold to avoid spacing issue)
-        lines.append(f"{i:>2}. {name_display} — {d['points']} pts ({gap_text})")
+            gap = leader_points - d["points"]
+            gap_text = "-" if i == 1 else f"-{gap}"
 
-        # Top 8 formatting
-        top_scores = d.get("top_8_scores", [])
-        top_scores_str = ", ".join(str(x) for x in top_scores)
+            name = d["name"]
+            flag = FLAG_CACHE.get(name, "")
 
-        # Second line (directly underneath)
-        lines.append(f"Weeks counted: {d['weeks']} | Top 8: {top_scores_str}")
+            if name in HIGHLIGHT_NAMES:
+                name_display = f"👽 {name}"
+            else:
+                name_display = name
 
-        # Blank line between drivers
-        lines.append("")
+            if flag:
+                name_display = f"{name_display} {flag}"
 
-    return "\n".join(lines)
+            lines.append(f"{i:>2}. {name_display} — {d['points']} pts ({gap_text})")
+
+            top_scores = d.get("top_8_scores", [])
+            top_scores_str = ", ".join(str(x) for x in top_scores)
+
+            lines.append(f"   Weeks counted: {d['weeks']} | Top 8: {top_scores_str}")
+            lines.append("")
+
+        sections.append("\n".join(lines))
+
+    return sections
 
 
 async def post_standings():
@@ -436,6 +444,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
