@@ -5,8 +5,13 @@ import json
 import asyncio
 import requests
 import discord
-from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime
+from discord.ext import commands
+from datetime import datetime, timedelta, timezone
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ==================================================
 # CONFIG
@@ -444,17 +449,66 @@ def format_division(title, drivers):
 async def post_standings():
     
     print("POST_STANDINGS STARTED")
-    print("Starting bot...")
-    print("FETCHING STANDINGS...")
-    print("STANDINGS FETCHED")
-    
-    div1, div2 = fetch_standings()
 
-    print(f"Division 1 drivers: {len(div1)}")
-    print(f"Division 2 drivers: {len(div2)}")
+    try:
+        print("FETCHING STANDINGS...")
+        div1, div2 = fetch_standings()
+        print("STANDINGS FETCHED")
+        print("DIV1 LENGTH:", len(div1))
+        print("DIV2 LENGTH:", len(div2))
 
-    intents = discord.Intents.default()
-    bot = discord.Client(intents=intents)
+    except Exception as e:
+        print(f"Error fetching standings: {e}")
+        return
+
+    try:
+        print("FORMATTING DIVISION 1")
+        division1_text = format_division("Division 1", div1)
+
+        print("FORMATTING DIVISION 2")
+        division2_text = format_division("Division 2", div2)
+
+        print("FORMAT COMPLETE")
+
+    except Exception as e:
+        print(f"Error formatting standings: {e}")
+        return
+
+    try:
+        print("CONNECTING TO DISCORD")
+
+        await bot.wait_until_ready()
+
+        channel = bot.get_channel(CHANNEL_ID)
+
+        if channel is None:
+            print("ERROR: Channel not found.")
+            return
+
+        # ---- DIVISION 1 MESSAGE ----
+        async for message in channel.history(limit=50):
+            if message.author == bot.user and "Division 1" in message.content:
+                print("Editing Division 1 message...")
+                await message.edit(content=division1_text)
+                break
+        else:
+            print("Sending new Division 1 message...")
+            await channel.send(division1_text)
+
+        # ---- DIVISION 2 MESSAGE ----
+        async for message in channel.history(limit=50):
+            if message.author == bot.user and "Division 2" in message.content:
+                print("Editing Division 2 message...")
+                await message.edit(content=division2_text)
+                break
+        else:
+            print("Sending new Division 2 message...")
+            await channel.send(division2_text)
+
+        print("DISCORD UPDATE COMPLETE")
+
+    except Exception as e:
+        print(f"Error updating Discord: {e}")
 
     @bot.event
     async def on_ready():
@@ -524,7 +578,7 @@ async def scheduler():
         print(f"Initial update failed: {e}")
 
     while True:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         next_run = now.replace(minute=40, second=0, microsecond=0)
 
@@ -545,6 +599,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
