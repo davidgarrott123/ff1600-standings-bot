@@ -354,9 +354,6 @@ async def post_standings():
         print(f"Error formatting standings: {e}")
         return
 
-    try:
-        await bot.wait_until_ready()
-
         channel = bot.get_channel(CHANNEL_ID)
 
         if channel is None:
@@ -416,7 +413,15 @@ async def scheduler():
         except Exception as e:
             print(f"Scheduled update failed: {e}")
 
-asyncio.run(scheduler())
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user}")
+    bot.loop.create_task(scheduler())
+
+
+bot.run(DISCORD_TOKEN)
+
 
 
 
