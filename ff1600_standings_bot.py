@@ -204,6 +204,24 @@ def fetch_standings():
             "results": entry.get("results", [])
         }
 
+        weekly_scores = []
+
+        for week in range(0, 12):
+
+            week_data = fetch_week_points(week)
+
+            for entry_week in week_data:
+                if entry_week.get("display_name") == driver_data["name"]:
+                    weekly_scores.append(entry_week.get("points", 0))
+                    break
+            else:
+                weekly_scores.append(0)
+
+        driver_data["weekly_scores"] = weekly_scores
+
+        top_8 = sorted(weekly_scores, reverse=True)[:8]
+        driver_data["top_8_scores"] = top_8
+
         # ✅ Weekly points (safe extraction)
         results = entry.get("results", [])
         if results:
@@ -222,6 +240,44 @@ def fetch_standings():
     div2.sort(key=lambda x: x["rank"])
 
     return div1[:20], div2[:20]
+
+def fetch_week_points(week_num):
+
+    proxy_url = (
+        "https://members-ng.iracing.com/bff/pub/proxy/data/stats/season_driver_standings"
+        f"?season_id={SERIES_ID}"
+        f"&car_class_id={CAR_CLASS_ID}"
+        f"&race_week_num={week_num}"
+        "&division=-1"
+    )
+
+    headers = {
+        "Cookie": IRACING_COOKIE,
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    proxy_resp = requests.get(proxy_url, headers=headers)
+    proxy_data = proxy_resp.json()
+
+    s3_link = proxy_data.get("link")
+
+    if not s3_link:
+        return []
+
+    manifest = requests.get(s3_link).json()
+
+    chunk_info = manifest.get("chunk_info", {})
+    base_url = chunk_info.get("base_download_url")
+    chunk_files = chunk_info.get("chunk_file_names", [])
+
+    week_drivers = []
+
+    for chunk_file in chunk_files:
+        chunk_url = base_url + chunk_file
+        chunk_data = requests.get(chunk_url).json()
+        week_drivers.extend(chunk_data)
+
+    return week_drivers
 
 # ==================================================
 # DRAW LICENSE BADGE
@@ -367,10 +423,17 @@ def format_division(title, drivers):
         if flag:
             name_display = f"{name_display} {flag}"
 
-        lines.append(
-            f"{i:>2}. {name_display} — {d['points']} pts ({gap_text})\n"
-            f"> Weeks counted: {d['weeks']}"
-        )
+        # First line (no bold to avoid spacing issue)
+        lines.append(f"{i:>2}. {name_display} — {d['points']} pts ({gap_text})")
+
+        # Top 8 formatting
+        top_scores = d.get("top_8_scores", [])
+        top_scores_str = ", ".join(str(x) for x in top_scores)
+
+        # Second line (directly underneath)
+        lines.append(f"Weeks counted: {d['weeks']} | Top 8: {top_scores_str}")
+
+        # Blank line between drivers
         lines.append("")
 
     return "\n".join(lines)
@@ -477,6 +540,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
