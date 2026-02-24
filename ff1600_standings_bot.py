@@ -370,25 +370,17 @@ async def post_standings():
             print("ERROR: Channel not found.")
             return
 
-        # ----- Division 1 -----
-        async for message in channel.history(limit=50):
-            if message.author == bot.user and "Division 1" in message.content:
-                print("Editing Division 1 message...")
-                await message.edit(content=division1_text)
-                break
-        else:
-            print("Sending new Division 1 message...")
-            await channel.send(division1_text)
+        # Get sections
+        div1_sections = format_division("Division 1", div1)
+        div2_sections = format_division("Division 2", div2)
 
-        # ----- Division 2 -----
-        async for message in channel.history(limit=50):
-            if message.author == bot.user and "Division 2" in message.content:
-                print("Editing Division 2 message...")
-                await message.edit(content=division2_text)
-                break
-        else:
-            print("Sending new Division 2 message...")
-            await channel.send(division2_text)
+        # Send Division 1 sections
+        for section in div1_sections:
+            await channel.send(section)
+
+        # Send Division 2 sections
+        for section in div2_sections:
+            await channel.send(section)
 
         print("DISCORD UPDATE COMPLETE")
 
@@ -444,6 +436,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
