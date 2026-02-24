@@ -417,7 +417,7 @@ async def scheduler():
 
         while wait_seconds > 0:
             await asyncio.sleep(min(sleep_interval, wait_seconds))
-              wait_seconds -= sleep_interval
+            wait_seconds -= sleep_interval
 
         print("Heartbeat...")
         
@@ -436,6 +436,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
