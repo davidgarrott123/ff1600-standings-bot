@@ -200,7 +200,8 @@ def fetch_standings():
             "points": entry.get("points", 0),
             "rank": rank,
             "weeks": entry.get("weeks_counted", 0),
-            "week_points": 0
+            "week_points": 0,
+            "results": entry.get("results", [])
         }
 
         # ✅ Weekly points (safe extraction)
@@ -348,6 +349,8 @@ def format_division(title, drivers):
 
     for i, d in enumerate(drivers[:20], start=1):
 
+        print(d["results"])
+
         gap = leader_points - d["points"]
         gap_text = "-" if i == 1 else f"-{gap}"
 
@@ -474,6 +477,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
