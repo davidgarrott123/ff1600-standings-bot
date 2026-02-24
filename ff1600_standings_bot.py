@@ -417,10 +417,12 @@ async def scheduler():
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
+    await post_standings()   # 👈 FORCE immediate run
     bot.loop.create_task(scheduler())
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
