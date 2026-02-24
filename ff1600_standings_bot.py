@@ -440,9 +440,12 @@ def format_division(title, drivers):
 
 
 async def post_standings():
-
+    
+    print("POST_STANDINGS STARTED")
     print("Starting bot...")
-
+    print("FETCHING STANDINGS...")
+    print("STANDINGS FETCHED")
+    
     div1, div2 = fetch_standings()
 
     print(f"Division 1 drivers: {len(div1)}")
@@ -540,6 +543,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
