@@ -6,6 +6,7 @@ import asyncio
 import requests
 import discord
 from discord.ext import commands
+from datetime import datetime, timedelta, timezone
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -301,8 +302,6 @@ def format_division(title, drivers):
 
     for i, d in enumerate(drivers[:20], start=1):
 
-        print(d["results"])
-
         gap = leader_points - d["points"]
         gap_text = "-" if i == 1 else f"-{gap}"
 
@@ -420,6 +419,7 @@ async def scheduler():
             print(f"Scheduled update failed: {e}")
 
 asyncio.run(scheduler())
+
 
 
 
