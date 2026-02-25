@@ -370,19 +370,19 @@ async def post_standings():
             print("ERROR: Channel not found.")
             return
 
-    # -------- CLEAR OLD BOT MESSAGES --------
-    print("Deleting old bot messages...")
+        # -------- CLEAR OLD BOT MESSAGES --------
+        print("Deleting old bot messages...")
 
-    async for message in channel.history(limit=100):
-        if message.author == bot.user:
-            await message.delete()
+        async for message in channel.history(limit=100):
+            if message.author == bot.user:
+                await message.delete()
 
-    print("Old messages deleted.")        
+        print("Old messages deleted.")
 
-        # Get sections
+        # -------- SEND NEW SECTIONS --------
         div1_sections = format_division("Division 1", div1)
         div2_sections = format_division("Division 2", div2)
-
+        
         # Send Division 1 sections
         for section in div1_sections:
             await channel.send(section)
@@ -445,6 +445,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
