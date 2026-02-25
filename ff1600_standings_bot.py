@@ -17,6 +17,10 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # CONFIG
 # ==================================================
 
+git add . 
+git commit -m "force rebuild"
+git push
+
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID", "0"))
 IRACING_COOKIE = os.getenv("IRACING_COOKIE")
@@ -445,6 +449,7 @@ async def on_ready():
 
 
 bot.run(DISCORD_TOKEN)
+
 
 
 
